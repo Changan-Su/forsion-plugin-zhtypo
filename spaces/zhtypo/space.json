@@ -1,0 +1,12 @@
+{
+  "id": "zhtypo",
+  "name": { "zh": "中文排版", "en": "zhtypo" },
+  "icon": "file-text",
+  "version": "1.0.0",
+  "layout": {
+    "left": [{ "type": "workspace" }],
+    "main": [{ "type": "plugin:zhtypo:report" }],
+    "right": []
+  },
+  "requires": { "views": ["plugin:zhtypo:report"] }
+}
