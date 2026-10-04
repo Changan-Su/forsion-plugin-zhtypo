@@ -2,6 +2,7 @@
   "id": "zhtypo",
   "name": { "zh": "中文排版", "en": "zhtypo" },
   "icon": "file-text",
+  "iconFile": "icon.png",
   "version": "1.0.0",
   "layout": {
     "left": [{ "type": "workspace" }],
