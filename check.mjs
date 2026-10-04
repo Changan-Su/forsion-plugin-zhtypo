@@ -744,7 +744,7 @@ let viewDispose = null
   // sidecar JSON 序列化 → 解析 → 字段齐全
   const rep = T.analyze()
   const car = JSON.parse(JSON.stringify(T.sidecarObject(rep, NOW)))
-  ok('B11 sidecar 字段齐全', car.version === 1 && car.plugin === 'zhtypo' && car.pluginVersion === '1.0.1'
+  ok('B11 sidecar 字段齐全', car.version === 1 && car.plugin === 'zhtypo' && car.pluginVersion === '1.0.2'
     && typeof car.note === 'string' && car.generatedAt === NOW && car.settings && Array.isArray(car.hits)
     && typeof car._note === 'string', JSON.stringify(Object.keys(car)))
   if (car.hits.length) {

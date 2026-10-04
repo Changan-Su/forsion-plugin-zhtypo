@@ -16,7 +16,7 @@
  * 时间:「现在」一律 Date.now();全文件无周期定时器(轮询一律 setTimeout 自排程)。
  */
 const PLUGIN_ID = 'zhtypo'
-const PLUGIN_VERSION = '1.0.1'
+const PLUGIN_VERSION = '1.0.2'
 const STYLE_ID = 'zhtypo-styles'
 const LAYER_CLASS = 'zhtypo-layer'
 // 会落盘的中文常量:英文界面下建出来的文件名必须与中文界面逐字相同。

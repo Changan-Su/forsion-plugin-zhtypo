@@ -2,7 +2,7 @@
   "id": "zhtypo",
   "name": "中文排版",
   "nameEn": "zhtypo",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "apiVersion": 1,
   "description": "中英之间该有的那个空格、全角半角混用的标点、重复词、标题 # 后缺的空格 —— 在你打字的当下就在行内画出波浪线,点一下就地改;而不是等发布那一刻才发现全篇几百处。默认永远只画线,一个字都不动:所有改动(单条 / 整段 / 整篇)都由你点出来,并且都进笔记自己的撤销栈,Cmd+Z 能全撤。数据流向:纯本地规则匹配,规则全部写死在代码里,不联网、不调 AI、不枚举全库,你的文字不出这台机器;对笔记的改动全部走编辑器事务(不做「读全文 → 改 → 整篇写回」),唯一会写进笔记库的文件是你主动点「导出报告」时产生的两份体检产物,落在 <工作文件夹>/排版体检/ 下,同名绝不覆写。代码块、行内代码、公式、URL、链接路径、wikilink、HTML 标签与注释、frontmatter 一律豁免 —— 宁可少提示一百次,不可错改一次。",
   "descriptionEn": "The missing space between Chinese and Latin text, half-width punctuation inside Chinese sentences, repeated words, a heading whose # has no space after it — zhtypo underlines them inline while you type, and one click fixes the spot. It never edits on its own: every change (one hit, one paragraph, or the whole note) is something you clicked, and all of them go through the note's own undo stack. Where the data goes: pure local rule matching, every rule hard-coded and readable; no network, no AI, no vault-wide scanning — your text never leaves this machine. Edits to a note all go through editor transactions (never read-all-then-write-back). The only files it ever writes into your vault are the two export artifacts you ask for, under <work folder>/排版体检/, and it never overwrites a file of the same name. Code fences, inline code, math, URLs, link targets, wikilinks, HTML tags and comments, and frontmatter are all exempt — better to under-report a hundred times than to wrongly change one character.",
