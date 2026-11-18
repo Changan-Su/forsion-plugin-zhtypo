@@ -16,7 +16,7 @@
  * 时间:「现在」一律 Date.now();全文件无周期定时器(轮询一律 setTimeout 自排程)。
  */
 const PLUGIN_ID = 'zhtypo'
-const PLUGIN_VERSION = '1.0.2'
+const PLUGIN_VERSION = '1.0.3'
 const STYLE_ID = 'zhtypo-styles'
 const LAYER_CLASS = 'zhtypo-layer'
 // 会落盘的中文常量:英文界面下建出来的文件名必须与中文界面逐字相同。
@@ -120,6 +120,7 @@ const MSG = {
     exportReadFail: '读取失败,已中止导出,未改动任何文件',
     exportTooMany: '同一分钟内已导出 9 份,请稍后再试',
     exportPartial: '报告已保存,机器数据未能写入',
+    ignoreUnreadable: '读不出已保存的忽略清单,「忽略」先停用,也不会保存改动,原来的清单没有动。以前忽略过的提示这次会重新出现。',
     reportIsActive: '这份报告正在编辑器里打开着,已取消导出。关掉它再试一次。',
     needNewerHost: '当前 Forsion 版本没有编辑器扩展接缝,行内波浪线不可用;体检报告仍可只读使用。',
     headingNoFix: '这一段里还有别的行,标题要自己断行之后再改',
@@ -185,6 +186,7 @@ const MSG = {
     exportReadFail: 'Could not read the target file, so the export was cancelled. Nothing was written.',
     exportTooMany: 'Nine reports already exported within this minute — try again shortly.',
     exportPartial: 'The report was saved, but the machine-readable sidecar could not be written.',
+    ignoreUnreadable: 'Your saved ignore list could not be read. Ignore is paused and nothing will be saved, so the original list is left as it was. Issues you ignored before may show up again for now.',
     reportIsActive: 'That report is open in the editor right now, so the export was cancelled. Close it and try again.',
     needNewerHost: 'This Forsion build has no editor-extension seam, so inline squiggles are unavailable. The read-only report still works.',
     headingNoFix: 'This paragraph holds more than one line — split it yourself before turning it into a heading',
@@ -894,21 +896,39 @@ let ignoreLoaded = false
 function ignoreDataObj() {
   return { version: 1, ignoredTexts: ignoredList.slice(), updatedAt: Date.now() }
 }
-const ready = Promise.resolve(ctx.loadData ? ctx.loadData() : null)
+// 存过却读不出来(宿主 2026-11-17 起 reject,code = 'plugin-data-unreadable';读错误 / 零字节 / 写到一半 / 被手改坏):
+// 按空清单接着用、下一次「忽略」就把用户攒的整份清单盖掉。所以这时「忽略」停用、不写盘,只提示一次,等下次加载再读。
+// 没存过(null)照旧是空清单;旧宿主读不出来也回 null,只能当空。
+let ignoreBlocked = false
+const isDataUnreadable = (e) => !!e && typeof e === 'object' && e.code === 'plugin-data-unreadable'
+const ready = Promise.resolve()
+  .then(() => (ctx.loadData ? ctx.loadData() : null))
   .then((v) => {
-    // 坏 JSON / null → 空清单。这是插件自己的偏好,不是用户文件,不违反「读失败 ≠ 不存在」。
     if (v && Array.isArray(v.ignoredTexts)) {
       ignoredList = v.ignoredTexts.filter((x) => typeof x === 'string').slice(-IGNORE_MAX)
       ignoredSet = new Set(ignoredList)
     }
     ignoreLoaded = true
   })
-  .catch(() => {
+  .catch((e) => {
+    if (isDataUnreadable(e)) {
+      ignoreBlocked = true
+      console.warn('[zhtypo] saved ignore list could not be read; ignoring is paused', e)
+      if (!disposed) ctx.notify?.(t('ignoreUnreadable'), { level: 'warning', title: t('title') })
+    }
     ignoreLoaded = true
   })
 
 function addIgnore(key) {
-  if (!key || ignoredSet.has(key)) return
+  // 插件已经卸下 / 重载过:排着的这次别再存,新实例可能已经存了更新的清单
+  if (!key || disposed) return
+  // 清单还没读回来:等它读完再加,别拿半份清单写盘把存着的那份盖掉
+  if (!ignoreLoaded) { void ready.then(() => addIgnore(key)); return }
+  if (ignoreBlocked) {
+    ctx.notify?.(t('ignoreUnreadable'), { level: 'warning', title: t('title') })
+    return
+  }
+  if (ignoredSet.has(key)) return
   ignoredList.push(key)
   ignoredSet.add(key)
   while (ignoredList.length > IGNORE_MAX) {
@@ -2087,7 +2107,7 @@ if (globalThis.__ZHTYPO_TEST__) {
     editorFactory, currentScanOpts, settingSignature,
     exportReport, guardWrite, tryRead, noteBaseOf, stampOf, norm,
     reportMarkdown, sidecarObject, analyze, doExport,
-    addIgnore, ignoreDataObj, ignoredSetRef: () => ignoredSet, ignoredListRef: () => ignoredList,
+    addIgnore, ignoreDataObj, ignoredSetRef: () => ignoredSet, ignoredListRef: () => ignoredList, ignoreBlockedRef: () => ignoreBlocked,
     liveViews, hitCounts, orderedViews, currentView,
     lastViewRef: () => lastView,
     mountCountRef: () => mountCount,
