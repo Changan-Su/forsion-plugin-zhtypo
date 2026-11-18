@@ -744,7 +744,7 @@ let viewDispose = null
   // sidecar JSON 序列化 → 解析 → 字段齐全
   const rep = T.analyze()
   const car = JSON.parse(JSON.stringify(T.sidecarObject(rep, NOW)))
-  ok('B11 sidecar 字段齐全', car.version === 1 && car.plugin === 'zhtypo' && car.pluginVersion === '1.0.2'
+  ok('B11 sidecar 字段齐全', car.version === 1 && car.plugin === 'zhtypo' && car.pluginVersion === '1.0.3'
     && typeof car.note === 'string' && car.generatedAt === NOW && car.settings && Array.isArray(car.hits)
     && typeof car._note === 'string', JSON.stringify(Object.keys(car)))
   if (car.hits.length) {
@@ -1013,6 +1013,62 @@ const STAMP = T.stampOf(NOW)
   ok('B12 旧宿主下报告视图挂得起来且有中文空态', el.textContent.indexOf('先在编辑器里打开一篇笔记') >= 0, el.textContent)
   if (typeof d === 'function') d()
   if (typeof oldDispose === 'function') oldDispose()
+  globalThis.__ZHTYPO_TEST__ = T
+}
+
+// ══ B15 存过却读不出来:「忽略」停用、提示、不写盘;没读完之前的「忽略」等读完再存 ═════════════
+{
+  const unreadable = () => Object.assign(new Error('plugin-data-unreadable'), { code: 'plugin-data-unreadable', reason: 'invalid-json' })
+  const fresh = async (overrides) => {
+    const notes = []
+    const saves = []
+    const c = { ...makeCtx(), notify: (m, o) => notes.push({ m, o }), saveData: async (v) => { saves.push(JSON.parse(JSON.stringify(v))) }, ...overrides }
+    globalThis.__ZHTYPO_TEST__ = {}
+    const d = new Function('ctx', src)(c)
+    const FT = globalThis.__ZHTYPO_TEST__
+    return { FT, d, notes, saves }
+  }
+  const settle = async () => { for (let i = 0; i < 6; i++) await new Promise((r) => setTimeout(r, 0)) }
+
+  {
+    const { FT, d, notes, saves } = await fresh({ loadData: async () => { throw unreadable() } })
+    await FT.ready
+    await settle()
+    ok('B15 读不出来 → 启动时提示一次', notes.length === 1 && notes[0].m === FT.t('ignoreUnreadable'), JSON.stringify(notes))
+    ok('B15 读不出来 → 记下停用', FT.ignoreBlockedRef?.() === true)
+    FT.addIgnore('space 读 坏F')
+    await settle()
+    ok('B15 读不出来时点「忽略」不写盘', saves.length === 0, JSON.stringify(saves))
+    ok('B15 读不出来时点「忽略」不进内存清单', FT.ignoredListRef().length === 0)
+    ok('B15 读不出来时点「忽略」再提示一次', notes.length === 2 && notes[1].m === FT.t('ignoreUnreadable'))
+    ok('B15 提示中英都有', FT.MSG.zh.ignoreUnreadable && FT.MSG.en.ignoreUnreadable && !/[\u4e00-\u9fff]/.test(FT.MSG.en.ignoreUnreadable))
+    if (typeof d === 'function') d()
+  }
+  {
+    // 没存过(旧宿主读不出来也是这样)→ 空清单,照常能忽略、能存
+    const { FT, d, notes, saves } = await fresh({ loadData: async () => null })
+    await FT.ready
+    FT.addIgnore('space 新 的F')
+    await settle()
+    ok('B15 没存过 → 照常写盘', saves.length === 1 && saves[0].ignoredTexts.indexOf('space 新 的F') >= 0, JSON.stringify(saves))
+    ok('B15 没存过 → 不提示', notes.length === 0, JSON.stringify(notes))
+    if (typeof d === 'function') d()
+  }
+  {
+    // 清单还在读的时候点了「忽略」:等读完再存,存下的是「原来的 + 新的」,不是只有新的一条
+    let release
+    const gate = new Promise((r) => { release = r })
+    const { FT, d, saves } = await fresh({ loadData: () => gate })
+    FT.addIgnore('space 早 点F')
+    await settle()
+    ok('B15 读回来之前不写盘', saves.length === 0, JSON.stringify(saves))
+    release({ version: 1, ignoredTexts: ['space 旧 的F'] })
+    await FT.ready
+    await settle()
+    const last = saves[saves.length - 1]
+    ok('B15 读回来之后存下原来的 + 新的', saves.length === 1 && last.ignoredTexts.join('|') === 'space 旧 的F|space 早 点F', JSON.stringify(saves))
+    if (typeof d === 'function') d()
+  }
   globalThis.__ZHTYPO_TEST__ = T
 }
 

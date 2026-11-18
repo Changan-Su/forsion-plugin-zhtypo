@@ -1,5 +1,12 @@
 # 更新日志
 
+## 1.0.3 — 2026-11-18
+
+- 保存的忽略清单读不出来时(文件读出错、是空的、写到一半或被手改坏),「忽略」先停用、提示一次,也不再保存:以前会按空清单接着用,下一次点「忽略」就把原来攒的整份清单盖掉。没存过时照旧从空清单开始。需要 2026-11-17 之后的 Forsion(更早的版本读不出来时仍当没存过)。
+- 清单还没读回来就点了「忽略」,现在等读完再保存,不会只存下这一条。
+- **English:** When the saved ignore list can't be read (a read error, an empty file, a write cut off halfway, or a hand edit that broke it), Ignore is paused, you're told once, and nothing is saved. Before, the plugin carried on with an empty list and the next Ignore overwrote the whole list you had built up. With nothing saved yet it still starts from an empty list. Needs a Forsion build from 2026-11-17 or later (earlier builds still treat unreadable data as never saved).
+- **English:** An Ignore clicked before the saved list has loaded now waits for it, instead of saving a list that holds only that one entry.
+
 ## 1.0.2 — 2026-10-04
 
 - Space 图标换成插件自己的图标,不再和别的插件共用图标库里的同一枚(`space.json` 的 `iconFile`)。需要支持 Space 自绘图标的 Forsion(2.12.2 之后的版本);更早的版本照旧显示原来的图标。配方版本不变,已保存的布局不受影响。
