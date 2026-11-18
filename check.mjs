@@ -1069,6 +1069,18 @@ const STAMP = T.stampOf(NOW)
     ok('B15 读回来之后存下原来的 + 新的', saves.length === 1 && last.ignoredTexts.join('|') === 'space 旧 的F|space 早 点F', JSON.stringify(saves))
     if (typeof d === 'function') d()
   }
+  {
+    // 读回来之前点了「忽略」,接着插件被卸下(重载):旧实例排着的那次不许再存,新实例可能已经存过更新的清单
+    let release
+    const gate = new Promise((r) => { release = r })
+    const { FT, d, saves } = await fresh({ loadData: () => gate })
+    FT.addIgnore('space 卸 前F')
+    if (typeof d === 'function') d()
+    release({ version: 1, ignoredTexts: ['space 旧 的F'] })
+    await FT.ready
+    await settle()
+    ok('B15 卸下之后旧实例排着的「忽略」不写盘', saves.length === 0, JSON.stringify(saves))
+  }
   globalThis.__ZHTYPO_TEST__ = T
 }
 

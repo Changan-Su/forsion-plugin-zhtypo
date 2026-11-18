@@ -920,7 +920,8 @@ const ready = Promise.resolve()
   })
 
 function addIgnore(key) {
-  if (!key) return
+  // 插件已经卸下 / 重载过:排着的这次别再存,新实例可能已经存了更新的清单
+  if (!key || disposed) return
   // 清单还没读回来:等它读完再加,别拿半份清单写盘把存着的那份盖掉
   if (!ignoreLoaded) { void ready.then(() => addIgnore(key)); return }
   if (ignoreBlocked) {
